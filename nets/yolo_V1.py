@@ -290,12 +290,15 @@ class YoloBody(nn.Module):
         # self.yolo_head3      = yolo_head([256, len(anchors_mask[0]) * (5 + num_classes)], 128)#原始head
         # 将数据展平
         self.flatten = nn.Flatten()
+        # self.fc3 = nn.Linear(in_features=524288, out_features=32, bias=True)
 
         self.down_sample1    = conv_dw(128, 256, stride = 2)
         self.make_five_conv3 = make_five_conv([256, 512], 512)
 
         # 3*(5+num_classes) = 3*(5+20) = 3*(4+1+20)=75
         # self.yolo_head2      = yolo_head([512, len(anchors_mask[1]) * (5 + num_classes)], 256)#原始head
+
+        # self.fc2 = nn.Linear(in_features=262144, out_features=64, bias=True)
 
         self.down_sample2    = conv_dw(256, 512, stride = 2)
         self.make_five_conv4 = make_five_conv([512, 1024], 1024)
@@ -305,7 +308,10 @@ class YoloBody(nn.Module):
         # 3*(5+num_classes)=3*(5+20)=3*(4+1+20)=75
         # self.yolo_head1      = yolo_head([1024, len(anchors_mask[2]) * (5 + num_classes)], 512)#原始head
 
-        self.fc_end = nn.Linear(in_features=256, out_features=num_classes, bias=True)
+        # self.fc1 = nn.Linear(in_features=131072, out_features=128, bias=True)
+
+        # self.fc_end = nn.Linear(in_features=32+64+128, out_features=number_class, bias=True)
+        self.fc_end = nn.Linear(in_features=131072 + 262144 + 524288, out_features=num_classes, bias=True)
 
     def forward(self, x):
         #  backbone
@@ -350,11 +356,16 @@ class YoloBody(nn.Module):
         P5 = self.make_five_conv4(P5)
 
         #对P5进行卷积得到一张特征图
-        out =   self.conv_for_end(P5)
+
 
         #对最后一张特征图展平，连接到线性层进行分类
-        out =   self.flatten(out)
 
+
+        out2 = self.flatten(P3)
+        out1 = self.flatten(P4)
+        out0 = self.flatten(P5)
+
+        out = torch.cat([out0, out1, out2], axis=1)
         out = self.fc_end(out)
 
         #---------------------------------------------------#

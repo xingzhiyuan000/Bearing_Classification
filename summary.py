@@ -22,7 +22,7 @@ if __name__ == "__main__":
     #   densenet201
     #   resnet50
     # -------------------------------#
-    backbone        = 'densenet121'
+    backbone        = 'ghostnet'
     
     device  = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     m       = YoloBody(num_classes, backbone=backbone).to(device)

@@ -47,7 +47,7 @@ test_data_set = MyDataSet(images_path=val_images_path,
 train_data_size=len(train_data_set)
 test_data_size=len(test_data_set)
 #加载数据集
-batch_size = 2
+batch_size = 4
 # nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
 # print('Using {} dataloader workers'.format(nw))
 train_dataloader = torch.utils.data.DataLoader(train_data_set,
@@ -75,7 +75,7 @@ test_dataloader = torch.utils.data.DataLoader(test_data_set,
 #   densenet201
 #   resnet50
 #-------------------------------#
-backbone        = "densenet121"
+backbone        = "ghostnet"
 #----------------------------------------------------------------------------------------------------------------------------#
 #   pretrained      是否使用主干网络的预训练权重，此处使用的是主干的权重，因此是在模型构建的时候进行加载的。
 #                   如果设置了model_path，则主干的权值无需加载，pretrained的值无意义。
