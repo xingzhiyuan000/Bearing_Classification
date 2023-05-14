@@ -13,7 +13,7 @@ import time
 from torch.optim import Adam, lr_scheduler
 import numpy as np
 import matplotlib.pyplot as plt
-from nets.yolo import YoloBody
+from nets.yolo_attention import YoloBody
 
 #tensorboard使用方法：tensorboard --logdir "E:\Python\Fault Diagnosis\Classification\logs"
 #需要设置cuda的数据有: 数据，模型，损失函数
@@ -28,7 +28,7 @@ print("using {} device.".format(device))
 #准备数据集
 #加载自制数据集
 
-root = ".\dataset"  # 钢丝绳数据集所在根目录
+root = ".\dataset/多通道/0"  # 钢丝绳数据集所在根目录
 
 
 train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(root)
@@ -47,7 +47,7 @@ test_data_set = MyDataSet(images_path=val_images_path,
 train_data_size=len(train_data_set)
 test_data_size=len(test_data_set)
 #加载数据集
-batch_size = 4
+batch_size = 2
 # nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
 # print('Using {} dataloader workers'.format(nw))
 train_dataloader = torch.utils.data.DataLoader(train_data_set,
@@ -75,7 +75,7 @@ test_dataloader = torch.utils.data.DataLoader(test_data_set,
 #   densenet201
 #   resnet50
 #-------------------------------#
-backbone        = "ghostnet"
+backbone        = "densenet121"
 #----------------------------------------------------------------------------------------------------------------------------#
 #   pretrained      是否使用主干网络的预训练权重，此处使用的是主干的权重，因此是在模型构建的时候进行加载的。
 #                   如果设置了model_path，则主干的权值无需加载，pretrained的值无意义。
@@ -86,8 +86,9 @@ pretrained      = False
 
 #------------------------------------------------------#
 #   创建模型
+# 定义注意力机制 0-无注意力 1-SE 2-CBAM 3-ECA 4-CA
 #------------------------------------------------------#
-wang = YoloBody(num_classes=13, backbone = backbone, pretrained = pretrained)
+wang = YoloBody(num_classes=13, backbone = backbone, pretrained = pretrained,phi=4)
 
 
 #对已训练好的模型进行微调
