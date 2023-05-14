@@ -14,6 +14,7 @@ from torch.optim import Adam, lr_scheduler
 import numpy as np
 import matplotlib.pyplot as plt
 from nets.yolo_attention import YoloBody
+from nets.MMDLoss import MMDLoss
 
 #tensorboard使用方法：tensorboard --logdir "E:\Python\Fault Diagnosis\Classification\logs"
 #需要设置cuda的数据有: 数据，模型，损失函数
@@ -34,7 +35,7 @@ root_target = ".\dataset/多通道/1"  # 【目标域】数据集-无标签
 #读取资源域数据
 train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(root)
 #读取目标域数据
-#target_train_images_path, target_train_images_label, target_val_images_path, target_val_images_label = read_split_data(root)
+target_train_images_path, target_train_images_label, target_val_images_path, target_val_images_label = read_split_data(root)
 
 data_transform = {
     "train": torchvision.transforms.Compose([torchvision.transforms.ToTensor()]),
@@ -46,9 +47,13 @@ train_data_set = MyDataSet(images_path=train_images_path,
 test_data_set = MyDataSet(images_path=val_images_path,
                            images_class=val_images_label,
                            transform=data_transform["val"])
+target_data_set = MyDataSet(images_path=target_train_images_path,
+                           images_class=target_train_images_label,
+                           transform=data_transform["train"])
 
 train_data_size=len(train_data_set)
 test_data_size=len(test_data_set)
+target_data_size=len(target_data_set) #目标域数据集长度
 #加载数据集
 batch_size = 2
 # nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
@@ -63,6 +68,11 @@ test_dataloader = torch.utils.data.DataLoader(test_data_set,
                                            shuffle=True,
                                            num_workers=0,
                                            collate_fn=test_data_set.collate_fn)
+target_dataloader = torch.utils.data.DataLoader(target_data_set,
+                                           batch_size=batch_size,
+                                           shuffle=True,
+                                           num_workers=0,
+                                           collate_fn=target_data_set.collate_fn)
 #plot_data_loader_image(train_dataloader)
 
 
@@ -105,6 +115,9 @@ wang = wang.to(device)  # 将模型加载到cuda上训练
 #定义损失函数
 loss_fn=nn.CrossEntropyLoss()
 loss_fn=loss_fn.to(device) #将损失函数加载到cuda上训练
+loss_mmd=MMDLoss() #MMD域适应损失
+beta=0.5 #控制MMD正则项强度
+loss_mmd=loss_mmd.to(device) #将损失函数加载到cuda上训练
 
 #定义优化器
 learing_rate=1e-3 #学习速率
@@ -118,7 +131,7 @@ total_test_step=0 #记录测试的次数
 epoch=20 #训练的轮数
 
 #添加tensorboard
-writer=SummaryWriter("logs",flush_secs=5)
+# writer=SummaryWriter("logs",flush_secs=5)
 test_accuracy=np.array([])
 for i in range(epoch):
     print("---------第{}轮训练开始------------".format(i+1))
@@ -130,7 +143,11 @@ for i in range(epoch):
         imgs = imgs.to(device)  # 将图片加载到cuda上训练
         targets = targets.to(device)  # 加载到cuda上训练
         outputs=wang(imgs) #放入网络训练
-        loss=loss_fn(outputs,targets) #用损失函数计算误差值
+        target_imgs, _=next(iter(target_dataloader)) #去目标域数据
+        target_imgs = target_imgs.to(device)  # 将图片加载到cuda上训练
+        loss1=loss_fn(outputs,targets) #用损失函数计算误差值-【分类损失】
+        loss2=loss_mmd(imgs, target_imgs)
+        loss = loss1 + beta*loss2
         #优化器调优
         optimizer.zero_grad() #清零梯度
         loss.backward() #反向传播
@@ -165,8 +182,8 @@ for i in range(epoch):
     test_accuracy=np.append(test_accuracy,(total_correct_num/test_data_size).cpu()) #保存每次迭代的测试准确率
     print("第{}训练后的测试集总体Loss为: {}".format(i+1,total_test_loss))
     print("第{}训练后的测试集总体正确率为: {}".format(i+1,total_correct_num/test_data_size))
-    writer.add_scalar("test_loss",total_test_loss, total_test_step) #添加测试loss到tensorboard中
-    writer.add_scalar("test_accuracy",total_correct_num/test_data_size,total_test_step) #添加测试数据集准确率到tensorboard中
+    # writer.add_scalar("test_loss",total_test_loss, total_test_step) #添加测试loss到tensorboard中
+    # writer.add_scalar("test_accuracy",total_correct_num/test_data_size,total_test_step) #添加测试数据集准确率到tensorboard中
     total_test_step=total_test_step+1
 
     time_str=time.strftime('%Y-%m-%d_%H-%M-%S',time.localtime(time.time()))
@@ -176,7 +193,7 @@ for i in range(epoch):
         torch.save(wang,filepath) #保存训练好的模型
 
 
-writer.close() #关闭tensorboard
+# writer.close() #关闭tensorboard
 
 # print('第{}次迭代产生Accuracy最大值:{}'.format(np.argmax(test_accuracy),np.max(test_accuracy)))
 #
