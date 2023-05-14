@@ -145,8 +145,9 @@ for i in range(epoch):
         outputs=wang(imgs) #放入网络训练
         target_imgs, _=next(iter(target_dataloader)) #去目标域数据
         target_imgs = target_imgs.to(device)  # 将图片加载到cuda上训练
+        target_outputs = wang(target_imgs)  # 放入网络训练
         loss1=loss_fn(outputs,targets) #用损失函数计算误差值-【分类损失】
-        loss2=loss_mmd(imgs, target_imgs)
+        loss2=loss_mmd(outputs, target_outputs)
         loss = loss1 + beta*loss2
         #优化器调优
         optimizer.zero_grad() #清零梯度
