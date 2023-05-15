@@ -16,6 +16,12 @@ import matplotlib.pyplot as plt
 from nets.yolo_attention import YoloBody
 from nets.MMDLoss import MMDLoss
 
+# 保存信息
+output_list=[]
+# 定义方法
+def forward_hook(module,data_input,data_output):
+    output_list.append(data_output)
+
 #tensorboard使用方法：tensorboard --logdir "E:\Python\Fault Diagnosis\Classification\logs"
 #需要设置cuda的数据有: 数据，模型，损失函数
 
@@ -55,7 +61,7 @@ train_data_size=len(train_data_set)
 test_data_size=len(test_data_set)
 target_data_size=len(target_data_set) #目标域数据集长度
 #加载数据集
-batch_size = 2
+batch_size = 1
 # nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
 # print('Using {} dataloader workers'.format(nw))
 train_dataloader = torch.utils.data.DataLoader(train_data_set,
@@ -101,7 +107,7 @@ pretrained      = False
 #   创建模型
 # 定义注意力机制 0-无注意力 1-SE 2-CBAM 3-ECA 4-CA
 #------------------------------------------------------#
-wang = YoloBody(num_classes=13, backbone = backbone, pretrained = pretrained,phi=4)
+wang = YoloBody(num_classes=13, backbone = backbone, pretrained = pretrained,phi=0)
 
 
 #对已训练好的模型进行微调
@@ -111,6 +117,8 @@ if Resume:
     wang.load_state_dict(torch.load('./tmp.pth'))
 
 wang = wang.to(device)  # 将模型加载到cuda上训练
+# 注册hook
+# wang.conv_for_end.register_forward_hook(forward_hook)
 
 #定义损失函数
 loss_fn=nn.CrossEntropyLoss()
@@ -139,15 +147,30 @@ for i in range(epoch):
     #训练步骤开始
     wang.train() #会对归一化及dropout等有作用
     for data in train_dataloader:
+        # output_list=[]
         imgs, targets=data #取图片数据
         imgs = imgs.to(device)  # 将图片加载到cuda上训练
         targets = targets.to(device)  # 加载到cuda上训练
         outputs=wang(imgs) #放入网络训练
+        source_feature = wang.featuremap.transpose(1, 0).cpu()
+        # print(source_feature)
+
+        source_conv_end_data = source_feature.cpu().squeeze(1).detach().numpy().reshape(1, -1)
+        source_conv_end_data = torch.tensor(source_conv_end_data)
+        print(source_conv_end_data.shape)
         target_imgs, _=next(iter(target_dataloader)) #去目标域数据
         target_imgs = target_imgs.to(device)  # 将图片加载到cuda上训练
         target_outputs = wang(target_imgs)  # 放入网络训练
+        target_feature = wang.featuremap.transpose(1, 0).cpu()
+        # print(target_feature)
+        target_conv_end_data = target_feature.cpu().squeeze(1).detach().numpy().reshape(1, -1)
+        target_conv_end_data=torch.tensor(target_conv_end_data)
+        print(target_conv_end_data.shape)
+
         loss1=loss_fn(outputs,targets) #用损失函数计算误差值-【分类损失】
-        loss2=loss_mmd(outputs, target_outputs)
+        print('loss1:',loss1)
+        loss2=loss_mmd(source_conv_end_data, target_conv_end_data)
+        print('loss2:', loss2)
         loss = loss1 + beta*loss2
         #优化器调优
         optimizer.zero_grad() #清零梯度

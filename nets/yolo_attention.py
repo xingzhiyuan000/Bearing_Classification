@@ -369,7 +369,7 @@ class YoloBody(nn.Module):
 
         #对P5进行卷积得到一张特征图
         out =   self.conv_for_end(P5)
-
+        self.featuremap = out.detach()  # 核心代码
         #对最后一张特征图展平，连接到线性层进行分类
         out =   self.flatten(out)
 

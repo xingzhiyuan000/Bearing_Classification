@@ -29,7 +29,7 @@ print("using {} device.".format(device))
 #加载自制数据集
 
 root = ".\dataset/多通道/0"  # 【资源域】数据集-带标签
-root_target = ".\dataset/多通道/1"  # 【目标域】数据集-无标签
+# root_target = ".\dataset/多通道/1"  # 【目标域】数据集-无标签
 
 #读取资源域数据
 train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(root)
