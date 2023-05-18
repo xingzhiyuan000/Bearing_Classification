@@ -81,7 +81,7 @@ class ConfusionMatrix(object):
 
 if __name__ == '__main__':
 
-    model_path=".\models/Classification_DenseNet121-CA.pth" #预测模型路径
+    model_path=".\models/DenseNet_0-1-MMD0.pth" #预测模型路径
     #定义训练的设备
     device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("using {} device.".format(device))
@@ -92,7 +92,7 @@ if __name__ == '__main__':
     # root = "./testset/3"  # 数据集所在根目录
 
 
-    train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(root)
+    train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(root, 1)
 
     #添加tensorboard
     #writer=SummaryWriter("logs",flush_secs=5)
@@ -108,7 +108,7 @@ if __name__ == '__main__':
     test_data_size=len(test_data_set)
 
     #加载数据集
-    batch_size = 4
+    batch_size = 64
     test_dataloader = torch.utils.data.DataLoader(test_data_set,
                                                batch_size=batch_size,
                                                shuffle=True,

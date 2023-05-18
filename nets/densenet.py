@@ -86,14 +86,15 @@ class _Transition(nn.Sequential):
 
 class DenseNet(nn.Module):
     def __init__(self, growth_rate=32, block_config=(6, 12, 24, 16),
-                 num_init_features=64, bn_size=4, drop_rate=0, num_classes=1000, memory_efficient=False):
+                 num_init_features=64, bn_size=4, drop_rate=0, num_classes=13, memory_efficient=False):
         super(DenseNet, self).__init__()
         #--------------------------------------#
         #   第一次卷积和最大池化
         #--------------------------------------#
         self.features = nn.Sequential(OrderedDict([
             # 416, 416, 3 -> 208, 208, 64
-            ('conv0', nn.Conv2d(3, num_init_features, kernel_size=7, stride=2, padding=3, bias=False)),
+            # ('conv0', nn.Conv2d(3, num_init_features, kernel_size=7, stride=2, padding=3, bias=False)), #原始
+            ('conv0', nn.Conv2d(3, num_init_features, kernel_size=3, stride=1, padding=1, bias=False)),
             ('norm0', nn.BatchNorm2d(num_init_features)),
             ('relu0', nn.ReLU(inplace=True)),
             # 208, 208, 64 -> 104, 104, 64
@@ -140,6 +141,12 @@ class DenseNet(nn.Module):
 
         # Linear layer
         self.classifier = nn.Linear(num_features, num_classes)
+        # 将数据展平
+        self.flatten = nn.Flatten()
+        # 1024-----64
+        # self.fc1 = nn.Linear(in_features=448 * 2, out_features=13, bias=True)
+        # 64-----13
+        # self.fc2 = nn.Linear(in_features=1024, out_features=13, bias=True)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -154,8 +161,16 @@ class DenseNet(nn.Module):
         features = self.features(x)
         out = F.relu(features, inplace=True)
         out = F.adaptive_avg_pool2d(out, (1, 1))
-        out = torch.flatten(out, 1)
+
+        # out = torch.flatten(out, 1)
+        out = self.flatten(out)
+        self.featuremap = out.detach()  # 核心代码
         out = self.classifier(out)
+
+        # out = self.fc1(out)
+        # x = self.dropout(x)
+        # out = F.relu(out)
+        # out = self.fc2(out)
         return out
 
 def _load_state_dict(model, model_url, progress):
@@ -179,6 +194,7 @@ def _densenet(arch, growth_rate, block_config, num_init_features, pretrained, pr
 
 def densenet121(pretrained=False, progress=True, **kwargs):
     return _densenet('densenet121', 32, (6, 12, 24, 16), 64, pretrained, progress,
+    # return _densenet('densenet121', 32, (6, 12, 12, 6), 64, pretrained, progress,
                      **kwargs)
 
 
@@ -191,11 +207,15 @@ def densenet201(pretrained=False, progress=True, **kwargs):
     return _densenet('densenet201', 32, (6, 12, 48, 32), 64, pretrained, progress,
                      **kwargs)
 
+def densenet_bearing(pretrained=False, progress=True, **kwargs):
+    return _densenet('densenet_bearing', 32, (6, 12, 6), 64, pretrained, progress,
+                     **kwargs)
+
 if __name__ == "__main__":
     import torch
     from torchsummary import summary
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    m = densenet121(False).to(device)
+    m = densenet_bearing(False).to(device)
     # print(m)
-    summary(m, input_size=(3, 416, 416))
+    summary(m, input_size=(3, 32, 32))

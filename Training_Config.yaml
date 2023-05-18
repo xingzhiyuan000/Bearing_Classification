@@ -1,0 +1,21 @@
+# Backbone
+#backbone: resnet50
+backbone: "densenet_bearing"
+
+# 训练配置
+save_epoch: 1
+epoch: 30
+batch_size: 96
+#beta: 10                   #控制MMD正则项强度
+learing_rate: 1e-3        #学习速率
+groups: [0,1,2,3]         #不同域数据文件夹名
+lambda_range: [0, 10, 21]      #控制MMD正则项强度
+
+root: "./dataset/multi/"           # 【资源域】数据集-带标签
+#root_target: "./dataset/multi/3"    # 【目标域】数据集-无标签
+
+#微调训练配置
+Resume: False                             #设置为True是继续之前的训练 False为从零开始
+path_checkpoint: "./models/Point.pth"     #模型路径
+
+

@@ -5,10 +5,10 @@ import torch
 from thop import clever_format, profile
 from torchsummary import summary
 
-from nets.yolo_attention import YoloBody
+from nets.Great import Great
 
 if __name__ == "__main__":
-    input_shape     = [512, 512]
+    input_shape     = [32, 32]
     num_classes     = 13
     # -------------------------------#
     #   所使用的主干特征提取网络
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     backbone        = 'densenet121'
     
     device  = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    m       = YoloBody(num_classes, backbone=backbone,phi=0).to(device)
+    m       = Great().to(device)
     summary(m, (3, input_shape[0], input_shape[1]))
     
     # mobilenetv1-yolov4 40,952,893

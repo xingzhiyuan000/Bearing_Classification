@@ -75,7 +75,7 @@ class MMDLoss(nn.Module):
 if __name__ == "__main__":
     MMD = MMDLoss()
 
-    source = torch.rand(64, 14)  # 可以理解为源域有64个14维数据
-    target = torch.rand(32, 14)  # 可以理解为源域有32个14维数据
+    source = torch.rand(32, 1024)  # 可以理解为源域有64个14维数据
+    target = torch.rand(32, 1024)  # 可以理解为源域有32个14维数据
     a = MMD(source=source, target=target)
     print(a)
