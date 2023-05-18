@@ -26,8 +26,8 @@ def forward_hook(module,data_input,data_output):
 #需要设置cuda的数据有: 数据，模型，损失函数
 
 save_epoch=1 #模型保存迭代次数间隔-10次保存一次
-Resume = False #设置为True是继续之前的训练 False为从零开始
-path_checkpoint = ".\models/Point.pth" #模型路径
+Resume = True #设置为True是继续之前的训练 False为从零开始
+path_checkpoint = ".\models/wang_2023-05-15_15-19-59_11.pth" #模型路径
 
 #定义训练的设备
 device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -153,33 +153,33 @@ for i in range(epoch):
         targets = targets.to(device)  # 加载到cuda上训练
         outputs=wang(imgs) #放入网络训练
         source_feature = wang.featuremap.transpose(1, 0).cpu()
-        # print(source_feature)
+        print(source_feature)
 
         source_conv_end_data = source_feature.cpu().squeeze(1).detach().numpy().reshape(1, -1)
         source_conv_end_data = torch.tensor(source_conv_end_data)
-        print(source_conv_end_data.shape)
+        # print(source_conv_end_data.shape)
         target_imgs, _=next(iter(target_dataloader)) #去目标域数据
         target_imgs = target_imgs.to(device)  # 将图片加载到cuda上训练
         target_outputs = wang(target_imgs)  # 放入网络训练
         target_feature = wang.featuremap.transpose(1, 0).cpu()
-        # print(target_feature)
+        print(target_feature)
         target_conv_end_data = target_feature.cpu().squeeze(1).detach().numpy().reshape(1, -1)
         target_conv_end_data=torch.tensor(target_conv_end_data)
-        print(target_conv_end_data.shape)
+        # print(target_conv_end_data.shape)
 
         loss1=loss_fn(outputs,targets) #用损失函数计算误差值-【分类损失】
-        print('loss1:',loss1)
+        # print('loss1:',loss1)
         loss2=loss_mmd(source_conv_end_data, target_conv_end_data)
-        print('loss2:', loss2)
+        # print('loss2:', loss2)
         loss = loss1 + beta*loss2
         #优化器调优
         optimizer.zero_grad() #清零梯度
         loss.backward() #反向传播
         optimizer.step()
-        total_train_loss = total_train_loss + loss.item()
+        total_train_loss = total_train_loss + loss2.item()
         total_train_step=total_train_step+1
         if total_train_step%50==0:
-            print("总训练批次: {},损失值Loss: {}".format(total_train_step,loss.item()))
+            print("总训练批次: {},损失值Loss: {}".format(total_train_step,loss2.item()))
 
             # writer.add_scalar("train_loss",loss.item(),global_step=total_train_step)
 
@@ -187,7 +187,7 @@ for i in range(epoch):
         scheduler.step() #每2次调整一次学习率
     current_learn_rate = optimizer.state_dict()['param_groups'][0]['lr']
     print("当前学习率：", current_learn_rate)
-    print("第{}训练后的训练集集总体Loss为: {}".format(i + 1, total_train_loss))
+    print("第{}训练后的【训练集】总体Loss为: {}".format(i + 1, total_train_loss))
     #一轮训练后，进行测试
     wang.eval()
     total_test_loss=0 #总体loss

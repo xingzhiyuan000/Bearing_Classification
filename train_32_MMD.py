@@ -17,6 +17,7 @@ from nets.Great import Great
 from nets.MMDLoss import MMDLoss
 import yaml
 from nets.densenet import densenet_bearing
+from nets.ghostnet import ghostnet
 
 with open('./Training_Config.yaml', 'r', encoding='utf-8') as file:
     yaml_data = yaml.load(file.read(), Loader=yaml.FullLoader)
@@ -106,6 +107,8 @@ def train(source, target, lamb):
         wang=densenet_bearing()
     elif(yaml_data['backbone']=="Great"):
         wang = Great()
+    elif (yaml_data['backbone'] == "ghostnet"):
+        wang = ghostnet()
 
 
     #对已训练好的模型进行微调
@@ -256,7 +259,7 @@ def train(source, target, lamb):
     print(str3)
     print(str4)
 
-    with open('result.txt', 'a') as file:
+    with open('./logs/result.txt', 'a') as file:
         file.write(str1 + '\n')
         file.write(str2 + '\n')
         file.write(str3 + '\n')

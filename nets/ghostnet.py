@@ -134,7 +134,7 @@ class GhostBottleneck(nn.Module):
 
 
 class GhostNet(nn.Module):
-    def __init__(self, cfgs, num_classes=1000, width=1.0, dropout=0.2):
+    def __init__(self, cfgs, num_classes=13, width=1.0, dropout=0.2):
         super(GhostNet, self).__init__()
         # setting of inverted residual blocks
         self.cfgs = cfgs
@@ -143,6 +143,7 @@ class GhostNet(nn.Module):
         # building first layer
         output_channel = _make_divisible(16 * width, 4)
         self.conv_stem = nn.Conv2d(3, output_channel, 3, 2, 1, bias=False)
+        # self.conv_stem = nn.Conv2d(3, output_channel, 3, 1, 1, bias=False)
         self.bn1 = nn.BatchNorm2d(output_channel)
         self.act1 = nn.ReLU(inplace=True)
         input_channel = output_channel
@@ -187,6 +188,7 @@ class GhostNet(nn.Module):
         x = x.view(x.size(0), -1)
         if self.dropout > 0.:
             x = F.dropout(x, p=self.dropout, training=self.training)
+        self.featuremap = x.detach()  # 核心代码
         x = self.classifier(x)
         return x
 
@@ -195,31 +197,64 @@ def ghostnet(**kwargs):
     """
     Constructs a GhostNet model
     """
+    # cfgs = [
+    #     # k, t, c, SE, s
+    #     # stage1
+    #     [[3,  16,  16, 0, 1]],
+    #     # stage2
+    #     [[3,  48,  24, 0, 2]],
+    #     [[3,  72,  24, 0, 1]],
+    #     # stage3
+    #     [[5,  72,  40, 0.25, 2]],
+    #     [[5, 120,  40, 0.25, 1]],
+    #     # stage4
+    #     [[3, 240,  80, 0, 2]],
+    #     [[3, 200,  80, 0, 1],
+    #      [3, 184,  80, 0, 1],
+    #      [3, 184,  80, 0, 1],
+    #      [3, 480, 112, 0.25, 1],
+    #      [3, 672, 112, 0.25, 1]
+    #     ],
+    #     # stage5
+    #     [[5, 672, 160, 0.25, 2]],
+    #     [[5, 960, 160, 0, 1],
+    #      [5, 960, 160, 0.25, 1],
+    #      [5, 960, 160, 0, 1],
+    #      [5, 960, 160, 0.25, 1]
+    #     ]
+
     cfgs = [
-        # k, t, c, SE, s 
+        # k, t, c, SE, s
         # stage1
-        [[3,  16,  16, 0, 1]],
+        [[3, 16, 16, 0, 1]],
+        [[3, 16, 16, 0, 1]],
+        [[3, 16, 16, 0, 1]],
+        [[3, 16, 16, 0, 1]],
+        [[3, 16, 16, 0, 1]],
+        [[3, 16, 16, 0, 1]],
         # stage2
-        [[3,  48,  24, 0, 2]],
-        [[3,  72,  24, 0, 1]],
+        [[3, 48, 24, 0, 2]],
+        [[3, 72, 24, 0, 1]],
+        [[3, 72, 24, 0, 1]],
+        [[3, 72, 24, 0, 1]],
+        [[3, 72, 24, 0, 1]],
+        [[3, 72, 24, 0, 1]],
+        [[3, 72, 24, 0, 1]],
+        [[3, 72, 24, 0, 1]],
+        [[3, 72, 24, 0, 1]],
+        [[3, 72, 24, 0, 1]],
+        [[3, 72, 24, 0, 1]],
+        [[3, 72, 24, 0, 1]],
+        [[3, 72, 24, 0, 1]],
         # stage3
-        [[5,  72,  40, 0.25, 2]],
-        [[5, 120,  40, 0.25, 1]],
-        # stage4
-        [[3, 240,  80, 0, 2]],
-        [[3, 200,  80, 0, 1],
-         [3, 184,  80, 0, 1],
-         [3, 184,  80, 0, 1],
-         [3, 480, 112, 0.25, 1],
-         [3, 672, 112, 0.25, 1]
-        ],
-        # stage5
-        [[5, 672, 160, 0.25, 2]],
-        [[5, 960, 160, 0, 1],
-         [5, 960, 160, 0.25, 1],
-         [5, 960, 160, 0, 1],
-         [5, 960, 160, 0.25, 1]
-        ]
+        [[5, 72, 40, 0.25, 2]],
+        [[5, 120, 40, 0.25, 1]],
+        [[5, 120, 40, 0.25, 1]],
+        [[5, 120, 40, 0.25, 1]],
+        [[5, 120, 40, 0.25, 1]],
+        [[5, 120, 40, 0.25, 1]],
+        [[5, 120, 40, 0.25, 1]],
+
     ]
     return GhostNet(cfgs, **kwargs)
 
