@@ -18,6 +18,10 @@ from nets.MMDLoss import MMDLoss
 import yaml
 from nets.densenet import densenet_bearing
 from nets.ghostnet import ghostnet
+from nets.mobilenet_v1 import mobilenet_v1
+from nets.mobilenet_v2 import mobilenet_v2
+from nets.mobilenet_v3 import mobilenet_v3
+from nets.resnet import ResNet, Bottleneck
 
 with open('./Training_Config.yaml', 'r', encoding='utf-8') as file:
     yaml_data = yaml.load(file.read(), Loader=yaml.FullLoader)
@@ -109,6 +113,15 @@ def train(source, target, lamb):
         wang = Great()
     elif (yaml_data['backbone'] == "ghostnet"):
         wang = ghostnet()
+    elif (yaml_data['backbone'] == "mobilenet_v1"):
+        wang = mobilenet_v1()
+    elif (yaml_data['backbone'] == "mobilenet_v2"):
+        wang = mobilenet_v2()
+    elif (yaml_data['backbone'] == "mobilenet_v3"):
+        wang = mobilenet_v3()
+    elif (yaml_data['backbone'] == "resnet"):
+        wang = ResNet(Bottleneck, [3, 4, 6, 3])
+
 
 
     #对已训练好的模型进行微调

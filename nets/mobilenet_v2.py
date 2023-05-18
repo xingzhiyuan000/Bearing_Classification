@@ -53,7 +53,7 @@ class InvertedResidual(nn.Module):
 
 
 class MobileNetV2(nn.Module):
-    def __init__(self, num_classes=1000, width_mult=1.0, inverted_residual_setting=None, round_nearest=8):
+    def __init__(self, num_classes=13, width_mult=1.0, inverted_residual_setting=None, round_nearest=8):
         super(MobileNetV2, self).__init__()
         block = InvertedResidual
         input_channel = 32
@@ -70,14 +70,14 @@ class MobileNetV2(nn.Module):
                 [6, 32, 3, 2],
 
                 # 52,52,32 -> 26,26,64
-                [6, 64, 4, 2],
+                # [6, 64, 4, 2],
                 # 26,26,64 -> 26,26,96
-                [6, 96, 3, 1],
+                # [6, 96, 3, 1],
                 
                 # 26,26,96 -> 13,13,160
-                [6, 160, 3, 2],
+                # [6, 160, 3, 2],
                 # 13,13,160 -> 13,13,320
-                [6, 320, 1, 1],
+                # [6, 320, 1, 1],
             ]
 
         if len(inverted_residual_setting) == 0 or len(inverted_residual_setting[0]) != 4:
@@ -116,10 +116,14 @@ class MobileNetV2(nn.Module):
             elif isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.zeros_(m.bias)
+        # 将数据展平
+        self.flatten = nn.Flatten()
 
     def forward(self, x):
         x = self.features(x)
         x = x.mean([2, 3])
+        x = self.flatten(x)
+        self.featuremap = x.detach()  # 核心代码
         x = self.classifier(x)
         return x
 
@@ -133,4 +137,11 @@ def mobilenet_v2(pretrained=False, progress=True):
     return model
 
 if __name__ == "__main__":
-    print(mobilenet_v2())
+    # print(mobilenet_v2())
+    import torch
+    from torchsummary import summary
+
+    # 需要使用device来指定网络在GPU还是CPU运行
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = mobilenet_v2().to(device)
+    summary(model, input_size=(3, 416, 416)) #3 416 416

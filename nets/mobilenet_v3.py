@@ -114,7 +114,7 @@ class InvertedResidual(nn.Module):
 
 
 class MobileNetV3(nn.Module):
-    def __init__(self, num_classes=1000, width_mult=1.):
+    def __init__(self, num_classes=13, width_mult=1.):
         super(MobileNetV3, self).__init__()
         # setting of inverted residual blocks
         self.cfgs = [
@@ -131,20 +131,20 @@ class MobileNetV3(nn.Module):
                 [5,   3,  40, 1, 0, 1],
                 [5,   3,  40, 1, 0, 1],
 
-                # 52,52,40 -> 26,26,80
-                [3,   6,  80, 0, 1, 2],
-                [3, 2.5,  80, 0, 1, 1],
-                [3, 2.3,  80, 0, 1, 1],
-                [3, 2.3,  80, 0, 1, 1],
-
-                # 26,26,80 -> 26,26,112
-                [3,   6, 112, 1, 1, 1],
-                [3,   6, 112, 1, 1, 1],
-
-                # 26,26,112 -> 13,13,160
-                [5,   6, 160, 1, 1, 2],
-                [5,   6, 160, 1, 1, 1],
-                [5,   6, 160, 1, 1, 1]
+                # # 52,52,40 -> 26,26,80
+                # [3,   6,  80, 0, 1, 2],
+                # [3, 2.5,  80, 0, 1, 1],
+                # [3, 2.3,  80, 0, 1, 1],
+                # [3, 2.3,  80, 0, 1, 1],
+                #
+                # # 26,26,80 -> 26,26,112
+                # [3,   6, 112, 1, 1, 1],
+                # [3,   6, 112, 1, 1, 1],
+                #
+                # # 26,26,112 -> 13,13,160
+                # [5,   6, 160, 1, 1, 2],
+                # [5,   6, 160, 1, 1, 1],
+                # [5,   6, 160, 1, 1, 1]
         ]
 
         input_channel = _make_divisible(16 * width_mult, 8)
@@ -170,11 +170,15 @@ class MobileNetV3(nn.Module):
         )
 
         self._initialize_weights()
+        # 将数据展平
+        self.flatten = nn.Flatten()
 
     def forward(self, x):
         x = self.features(x)
         x = self.conv(x)
         x = self.avgpool(x)
+        x = self.flatten(x)
+        self.featuremap = x.detach()  # 核心代码
         x = x.view(x.size(0), -1)
         x = self.classifier(x)
         return x
@@ -200,4 +204,13 @@ def mobilenet_v3(pretrained=False, **kwargs):
         state_dict = torch.load('./model_data/mobilenetv3-large-1cd25616.pth')
         model.load_state_dict(state_dict, strict=True)
     return model
+
+if __name__ == "__main__":
+    import torch
+    from torchsummary import summary
+
+    # 需要使用device来指定网络在GPU还是CPU运行
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = mobilenet_v3().to(device)
+    summary(model, input_size=(3, 32, 32)) #3 416 416
 

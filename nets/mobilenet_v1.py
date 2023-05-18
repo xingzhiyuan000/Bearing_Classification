@@ -54,15 +54,20 @@ class MobileNetV1(nn.Module):
             conv_dw(1024, 1024, 1),
         )
         self.avg = nn.AdaptiveAvgPool2d((1,1))
-        self.fc = nn.Linear(1024, 1000)
+        # 将数据展平
+        self.flatten = nn.Flatten()
+
+        self.fc = nn.Linear(256, 13) #类别数
 
     def forward(self, x):
         x = self.stage1(x)
-        x = self.stage2(x)
-        x = self.stage3(x)
+        # x = self.stage2(x)
+        # x = self.stage3(x)
         x = self.avg(x)
+        x = self.flatten(x)
+        self.featuremap = x.detach()  # 核心代码
         # x = self.model(x)
-        x = x.view(-1, 1024)
+        x = x.view(-1, 256)
         x = self.fc(x)
         return x
 
@@ -80,4 +85,4 @@ if __name__ == "__main__":
     # 需要使用device来指定网络在GPU还是CPU运行
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = mobilenet_v1().to(device)
-    summary(model, input_size=(3, 416, 416))
+    summary(model, input_size=(3, 32, 32)) #3 416 416

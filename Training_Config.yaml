@@ -1,11 +1,15 @@
 # Backbone
 #backbone: resnet50
 #backbone: "densenet_bearing"
-backbone: "ghostnet"
+#backbone: "ghostnet"
+#backbone: "mobilenet_v1"
+#backbone: "mobilenet_v2"
+#backbone: "mobilenet_v3"
+backbone: "resnet"
 
 # 训练配置
 save_epoch: 1
-epoch: 2
+epoch: 30
 batch_size: 96
 #beta: 10                   #控制MMD正则项强度
 learing_rate: 1e-3        #学习速率

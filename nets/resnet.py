@@ -96,7 +96,7 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(nn.Module):
-    def __init__(self, block, layers, num_classes=1000):
+    def __init__(self, block, layers, num_classes=13):
         #-----------------------------------------------------------#
         #   假设输入图像为600,600,3
         #   当我们使用resnet50的时候
@@ -104,11 +104,12 @@ class ResNet(nn.Module):
         self.inplanes = 64
         super(ResNet, self).__init__()
         # 600,600,3 -> 300,300,64
-        self.conv1  = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
+        # self.conv1  = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
+        self.conv1  = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1    = nn.BatchNorm2d(64)
         self.relu   = nn.ReLU(inplace=True)
         # 300,300,64 -> 150,150,64
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=0, ceil_mode=True) # change
+        # self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=0, ceil_mode=True) # change
         # 150,150,64 -> 150,150,256
         self.layer1 = self._make_layer(block, 64, layers[0])
         # 150,150,256 -> 75,75,512
@@ -118,7 +119,10 @@ class ResNet(nn.Module):
         # 38,38,1024 -> 19,19,2048
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
         
-        self.avgpool = nn.AvgPool2d(7)
+        self.avgpool = nn.AvgPool2d(4)
+        # 将数据展平
+        self.flatten = nn.Flatten()
+
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
         for m in self.modules():
@@ -150,7 +154,7 @@ class ResNet(nn.Module):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
-        x = self.maxpool(x)
+        # x = self.maxpool(x)
 
         x = self.layer1(x)
         x = self.layer2(x)
@@ -158,6 +162,8 @@ class ResNet(nn.Module):
         x = self.layer4(x)
 
         x = self.avgpool(x)
+        x = self.flatten(x)
+        self.featuremap = x.detach()  # 核心代码
         x = x.view(x.size(0), -1)
         x = self.fc(x)
 
@@ -171,3 +177,12 @@ def resnet50(pretrained=False, **kwargs):
     del model.avgpool
     del model.fc
     return model
+
+if __name__ == "__main__":
+    import torch
+    from torchsummary import summary
+
+    # 需要使用device来指定网络在GPU还是CPU运行
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = ResNet(Bottleneck, [3, 4, 6, 3]).to(device)
+    summary(model, input_size=(3, 32, 32)) #3 416 416
