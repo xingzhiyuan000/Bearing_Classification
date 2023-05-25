@@ -291,24 +291,24 @@ def train(source, target, lamb1,lamb2):
         if (i+1) % save_epoch == 0:
             torch.save(wang,filepath) #保存训练好的模型
 
-    # index=np.argmax(target_test_accuracy)
-    # str1 = '---------训练信息：【{}---{}】,正则强度1: 【{}】--,正则强度2: 【{}】-------'.format(source[-1], target[-1], lamb1,lamb2)
-    # str2='第{}次迭代【测试集-资源域】准确率:{}'.format(np.argmax(target_test_accuracy)+1,test_accuracy[index])
-    # str3='第{}次迭代【测试集-目标域】最大准确率:{}'.format(np.argmax(target_test_accuracy) + 1, np.max(target_test_accuracy))
-    # str4='第{}次迭代对应的模型名称:{}'.format(np.argmax(target_test_accuracy) + 1,model_name[index])
-    # print(str1)
-    # print(str2)
-    # print(str3)
-    # print(str4)
-
+    index=np.argmax(target_test_accuracy)
     str1 = '---------训练信息：【{}---{}】,正则强度1: 【{}】--,正则强度2: 【{}】-------'.format(source[-1], target[-1], lamb1,lamb2)
-    str2='迭代最后5次【测试集-资源域】平均准确率:{}'.format(average_value(2,test_accuracy))
-    str3='迭代最后5次【测试集-目标域】平均准确率:{}'.format(average_value(2, target_test_accuracy))
-    str4='最后一次迭代对应的模型名称:{}'.format(model_name[epoch-1])
+    str2='第{}次迭代【测试集-资源域】准确率:{}'.format(np.argmax(target_test_accuracy)+1,test_accuracy[index])
+    str3='第{}次迭代【测试集-目标域】最大准确率:{}'.format(np.argmax(target_test_accuracy) + 1, np.max(target_test_accuracy))
+    str4='第{}次迭代对应的模型名称:{}'.format(np.argmax(target_test_accuracy) + 1,model_name[index])
     print(str1)
     print(str2)
     print(str3)
     print(str4)
+
+    # str1 = '---------训练信息：【{}---{}】,正则强度1: 【{}】--,正则强度2: 【{}】-------'.format(source[-1], target[-1], lamb1,lamb2)
+    # str2='迭代最后4次【测试集-资源域】平均准确率:{}'.format(average_value(4,test_accuracy))
+    # str3='迭代最后4次【测试集-目标域】平均准确率:{}'.format(average_value(4, target_test_accuracy))
+    # str4='最后一次迭代对应的模型名称:{}'.format(model_name[epoch-1])
+    # print(str1)
+    # print(str2)
+    # print(str3)
+    # print(str4)
 
     with open('./logs/result.txt', 'a') as file:
         file.write(str1 + '\n')
