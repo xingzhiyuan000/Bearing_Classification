@@ -1,0 +1,33 @@
+# Backbone
+#backbone: resnet50
+backbone: "densenet_bearing"
+#backbone: "ghostnet"
+#backbone: "mobilenet_v1"
+#backbone: "mobilenet_v2"
+#backbone: "mobilenet_v3"
+#backbone: "resnet"
+
+#域对齐方法
+#transfer_loss: mmd
+transfer_loss_fir: mmd
+transfer_loss_sec: lmmd
+
+# 训练配置
+save_epoch: 1
+epoch: 2
+batch_size: 64
+learing_rate: 1e-3                #学习速率
+groups: [0,1,2,3]                 #不同域数据文件夹名
+lambda_range_fir: [0, 8, 5]          #控制MMD正则项强度
+lambda_range_sec: [0, 8, 5]          #控制MMD正则项强度
+root: "./dataset/multi/"          #【资源域】数据集-带标签
+num_class: 13                     #样本分类个数
+
+
+#微调训练配置
+Resume: False                             #设置为True是继续之前的训练 False为从零开始
+path_checkpoint: "./models/Point.pth"     #模型路径
+
+#beta: 10                   #控制MMD正则项强度
+#root_target: "./dataset/multi/3"    # 【目标域】数据集-无标签
+
