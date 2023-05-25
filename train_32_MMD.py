@@ -1,3 +1,5 @@
+import itertools
+
 import torch
 import torchvision
 import os
@@ -22,6 +24,7 @@ from nets.mobilenet_v1 import mobilenet_v1
 from nets.mobilenet_v2 import mobilenet_v2
 from nets.mobilenet_v3 import mobilenet_v3
 from nets.resnet import ResNet, Bottleneck
+from loss_funcs.lmmd import LMMDLoss
 
 with open('./Training_Config.yaml', 'r', encoding='utf-8') as file:
     yaml_data = yaml.load(file.read(), Loader=yaml.FullLoader)
@@ -81,6 +84,7 @@ def train(source, target, lamb):
     batch_size = yaml_data['batch_size']
     # nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
     # print('Using {} dataloader workers'.format(nw))
+    # drop_last=True 用来舍弃不足的末尾BatchSize
     train_dataloader = torch.utils.data.DataLoader(train_data_set,
                                                batch_size=batch_size,
                                                shuffle=True,
@@ -137,9 +141,14 @@ def train(source, target, lamb):
     #定义损失函数
     loss_fn=nn.CrossEntropyLoss()
     loss_fn=loss_fn.to(device) #将损失函数加载到cuda上训练
-    loss_mmd=MMDLoss() #MMD域适应损失
+    if (yaml_data['transfer_loss'] == "mmd"):
+        transfer_loss=MMDLoss().to(device) #MMD域适应损失
+    elif (yaml_data['transfer_loss'] == "lmmd"):
+        transfer_loss = LMMDLoss(num_class=int(yaml_data['num_class'])).to(device)  # MMD域适应损失
+
+
     # beta=yaml_data['beta'] #控制MMD正则项强度
-    loss_mmd=loss_mmd.to(device) #将损失函数加载到cuda上训练
+
 
     #定义优化器
     learing_rate=yaml_data['learing_rate'] #学习速率
@@ -177,9 +186,17 @@ def train(source, target, lamb):
 
             source_fc_data = torch.tensor(source_fc_data)
             # print(source_fc_data.shape)
-            target_imgs, _ = next(iter(tgt_train_dataloader))  # 去目标域数据
+            source_batch_size = targets.size()[0] #资源域输入Batch大小
+
+            # print("[资源域]取到的Batch：", source_batch_size)
+            target_imgs, _ = next(iter(tgt_train_dataloader)) #获取目标域下一次的迭代数据
+            target_batch_size = target_imgs.size()[0]  # 资源域输入Batch大小
+            # print("[目标域]取到的Batch：",target_batch_size)
+            if(source_batch_size!=target_batch_size):
+                break
+            # target_imgs, _ = next(iter(tgt_train_dataloader))  # 直接取目标域下一个Batch的数据
             target_imgs = target_imgs.to(device)  # 将图片加载到cuda上训练
-            target_outputs = wang(target_imgs)  # 放入网络训练
+            target_outputs = wang(target_imgs)  # 放入网络预测
             target_feature = wang.featuremap.transpose(1, 0).cpu()
 
             # print(target_feature)
@@ -191,7 +208,13 @@ def train(source, target, lamb):
 
             loss1 = loss_fn(outputs, targets)  # 用损失函数计算误差值-【分类损失】
             # print('loss1:', loss1)
-            loss2 = loss_mmd(source_fc_data, target_fc_data)
+            if (yaml_data['transfer_loss'] == "mmd"):
+                loss2 = transfer_loss(source_fc_data, target_fc_data)
+            elif (yaml_data['transfer_loss'] == "lmmd"):
+                # source_label=targets.cpu().detach().numpy()
+                # print(targets.size()[0])
+                target_logits=torch.nn.functional.softmax(target_outputs, dim=1)
+                loss2 = transfer_loss(source_fc_data.to(device), target_fc_data.to(device),targets,target_logits)
             # print('loss2:', "%2.20f"%loss2)
             loss = loss1 + lamb * loss2
             #优化器调优
