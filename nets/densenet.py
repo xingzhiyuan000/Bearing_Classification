@@ -94,7 +94,7 @@ class DenseNet(nn.Module):
         self.features = nn.Sequential(OrderedDict([
             # 416, 416, 3 -> 208, 208, 64
             # ('conv0', nn.Conv2d(3, num_init_features, kernel_size=7, stride=2, padding=3, bias=False)), #原始
-            ('conv0', nn.Conv2d(3, num_init_features, kernel_size=3, stride=1, padding=1, bias=False)),
+            ('conv0', nn.Conv2d(1, num_init_features, kernel_size=3, stride=1, padding=1, bias=False)),
             ('norm0', nn.BatchNorm2d(num_init_features)),
             ('relu0', nn.ReLU(inplace=True)),
             # 208, 208, 64 -> 104, 104, 64
@@ -140,11 +140,12 @@ class DenseNet(nn.Module):
         self.features.add_module('norm5', nn.BatchNorm2d(num_features))
 
         # Linear layer
-        self.classifier = nn.Linear(num_features, num_classes)
+        # self.classifier = nn.Linear(num_features, num_classes)
+        self.classifier = nn.Linear(256, num_classes)
         # 将数据展平
         self.flatten = nn.Flatten()
         # 1024-----64
-        # self.fc1 = nn.Linear(in_features=448 * 2, out_features=13, bias=True)
+        self.fc1 = nn.Linear(in_features=448, out_features=256, bias=True)
         # 64-----13
         # self.fc2 = nn.Linear(in_features=1024, out_features=13, bias=True)
 
@@ -164,7 +165,8 @@ class DenseNet(nn.Module):
 
         # out = torch.flatten(out, 1)
         out = self.flatten(out)
-        self.featuremap = out.detach()  # 核心代码
+        # self.featuremap = out.detach()  # 核心代码
+        out = F.relu(self.fc1(out))
         out = self.classifier(out)
 
         # out = self.fc1(out)
@@ -218,4 +220,4 @@ if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     m = densenet_bearing(False).to(device)
     # print(m)
-    summary(m, input_size=(3, 32, 32))
+    summary(m, input_size=(1, 32, 32))

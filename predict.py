@@ -81,15 +81,17 @@ class ConfusionMatrix(object):
 
 if __name__ == '__main__':
 
-    model_path=".\models/DenseNet_0-1-MMD0.pth" #预测模型路径
+    model_path=".\models/DenseNet_A_Epoch50_Time.pth" #预测模型路径
     #定义训练的设备
     device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("using {} device.".format(device))
     #加载自制数据集
-    # root = "./testset/0"  # 数据集所在根目录
-    root = "./testset/1"  # 数据集所在根目录
-    # root = "./testset/2"  # 数据集所在根目录
-    # root = "./testset/3"  # 数据集所在根目录
+    # root = "./testset/A"  # 数据集所在根目录
+    # root = "./testset/B"  # 数据集所在根目录
+    # root = "./testset/C"  # 数据集所在根目录
+    # root = "./testset/D"  # 数据集所在根目录
+
+    root = "./dataset/single/time/C"  # 数据集所在根目录
 
 
     train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(root, 1)
