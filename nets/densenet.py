@@ -94,7 +94,7 @@ class DenseNet(nn.Module):
         self.features = nn.Sequential(OrderedDict([
             # 416, 416, 3 -> 208, 208, 64
             # ('conv0', nn.Conv2d(3, num_init_features, kernel_size=7, stride=2, padding=3, bias=False)), #原始
-            ('conv0', nn.Conv2d(1, num_init_features, kernel_size=3, stride=1, padding=1, bias=False)),
+            ('conv0', nn.Conv2d(3, num_init_features, kernel_size=3, stride=1, padding=1, bias=False)),
             ('norm0', nn.BatchNorm2d(num_init_features)),
             ('relu0', nn.ReLU(inplace=True)),
             # 208, 208, 64 -> 104, 104, 64
@@ -220,4 +220,4 @@ if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     m = densenet_bearing(False).to(device)
     # print(m)
-    summary(m, input_size=(1, 32, 32))
+    summary(m, input_size=(3, 32, 32))

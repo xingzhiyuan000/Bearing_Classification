@@ -37,10 +37,10 @@ print("using {} device.".format(device))
 #准备数据集
 #加载自制数据集
 
-root = yaml_data['root']+'A' #【资源域】数据集-带标签
+root = yaml_data['root'] #【资源域】数据集-带标签
 
 #读取资源域数据
-train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(root,0.2)
+train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(root,float(yaml_data['test_ratio']))
 #读取目标域数据
 #target_train_images_path, target_train_images_label, target_val_images_path, target_val_images_label = read_split_data(root)
 
@@ -104,9 +104,10 @@ loss_fn=loss_fn.to(device) #将损失函数加载到cuda上训练
 
 #定义优化器
 learing_rate=yaml_data['learing_rate'] #学习速率
+lr_decay=yaml_data['lr_decay'] #衰减速率
 # optimizer=torch.optim.SGD(wang.parameters(),lr=learing_rate)
 optimizer = Adam(wang.parameters(), lr=float(learing_rate))  # 选用AdamOptimizer
-scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.9) #使用学习率指数连续衰减
+scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=float(lr_decay)) #使用学习率指数连续衰减
 
 #设置训练网络的一些参数
 total_train_step=0 #记录训练的次数
